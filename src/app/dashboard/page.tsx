@@ -33,6 +33,8 @@ import { Label } from '@/components/ui/label';
 import { Session } from '@supabase/supabase-js';
 import Link from 'next/link';
 
+export const dynamic = 'force-dynamic';
+
 interface Campaign {
   id: string;
   name: string;
