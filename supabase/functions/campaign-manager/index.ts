@@ -30,7 +30,13 @@ serve(async (req) => {
     if (req.method === 'GET') {
       const { data: campaigns, error } = await supabase
         .from('campaigns')
-        .select('*')
+        .select(`
+          *,
+          emails (
+            *,
+            replies (*)
+          )
+        `)
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
@@ -41,16 +47,29 @@ serve(async (req) => {
         status: 200,
       });
     } else if (req.method === 'POST') {
-      const { name } = await req.json();
+      const { name, goal, audience } = await req.json();
+      
+      if (!name) {
+        return new Response(JSON.stringify({ error: 'Campaign name is required' }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400,
+        });
+      }
+
       const { data: newCampaign, error } = await supabase
         .from('campaigns')
-        .insert({ name, user_id: user.id, status: 'draft' })
+        .insert({ 
+          name, 
+          goal: goal || '', 
+          audience: audience || '', 
+          user_id: user.id 
+        })
         .select()
         .single();
 
       if (error) throw error;
 
-      return new Response(JSON.stringify({ campaign: newCampaign }), {
+      return new Response(JSON.stringify({ newCampaign }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 201,
       });

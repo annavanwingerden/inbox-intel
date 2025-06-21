@@ -31,13 +31,13 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Session } from '@supabase/supabase-js';
+import Link from 'next/link';
 
 interface Campaign {
   id: string;
   name: string;
   goal: string;
   audience: string;
-  status: string;
   created_at: string;
 }
 
@@ -214,14 +214,25 @@ export default function Dashboard() {
                         />
                       </div>
                       <div className="grid w-full max-w-sm items-center gap-1.5">
-                        <Label htmlFor="audience">Audience (Coming Soon)</Label>
+                        <Label htmlFor="goal">Campaign Goal</Label>
+                        <Input
+                          type="text"
+                          id="goal"
+                          placeholder="e.g., Generate 50 qualified leads"
+                          value={newCampaignGoal}
+                          onChange={(e) => setNewCampaignGoal(e.target.value)}
+                          required
+                        />
+                      </div>
+                      <div className="grid w-full max-w-sm items-center gap-1.5">
+                        <Label htmlFor="audience">Target Audience</Label>
                         <Input
                           type="text"
                           id="audience"
-                          placeholder="e.g., waitlist.csv"
+                          placeholder="e.g., SaaS founders, Marketing managers"
                           value={newCampaignAudience}
                           onChange={(e) => setNewCampaignAudience(e.target.value)}
-                          disabled // Disabled as per plan
+                          required
                         />
                       </div>
                       <DialogFooter>
@@ -241,20 +252,33 @@ export default function Dashboard() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Campaign Name</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Sent</TableHead>
-                  <TableHead>Replies</TableHead>
+                  <TableHead>Goal</TableHead>
+                  <TableHead>Audience</TableHead>
                   <TableHead>Created At</TableHead>
+                  <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {campaigns.map((campaign) => (
                   <TableRow key={campaign.id}>
-                    <TableCell>{campaign.name}</TableCell>
-                    <TableCell>{campaign.status}</TableCell>
-                    <TableCell>0</TableCell>
-                    <TableCell>0</TableCell>
+                    <TableCell>
+                      <Link 
+                        href={`/campaigns/${campaign.id}`}
+                        className="text-blue-600 hover:text-blue-800 font-medium"
+                      >
+                        {campaign.name}
+                      </Link>
+                    </TableCell>
+                    <TableCell className="max-w-xs truncate">{campaign.goal}</TableCell>
+                    <TableCell className="max-w-xs truncate">{campaign.audience}</TableCell>
                     <TableCell>{new Date(campaign.created_at).toLocaleDateString()}</TableCell>
+                    <TableCell>
+                      <Link href={`/campaigns/${campaign.id}`}>
+                        <Button variant="outline" size="sm">
+                          View & Compose
+                        </Button>
+                      </Link>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
