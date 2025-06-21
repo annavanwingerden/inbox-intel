@@ -172,12 +172,12 @@ serve(async (req) => {
       } catch (userError) {
         console.error(`Failed to process replies for user ${userId}:`, userError.message);
       }
-    }
-    
-    return new Response(
+  }
+
+  return new Response(
       JSON.stringify({ success: true, message: `Polling complete. Processed ${totalRepliesProcessed} new replies.` }),
-      { headers: { "Content-Type": "application/json" } },
-    )
+    { headers: { "Content-Type": "application/json" } },
+  )
   } catch (err) {
     console.error("Error in reply-poller function:", err.message);
     return new Response(

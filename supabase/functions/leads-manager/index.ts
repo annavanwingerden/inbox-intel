@@ -116,6 +116,7 @@ serve(async (req) => {
       status: 405,
     });
   } catch (err) {
+    console.error("Critical error in leads-manager function:", err);
     return new Response(JSON.stringify({ 
       error: err.message || 'An error occurred while managing leads'
     }), {

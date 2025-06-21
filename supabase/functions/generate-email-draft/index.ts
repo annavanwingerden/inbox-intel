@@ -71,7 +71,7 @@ serve(async (req) => {
     }
 
     // 2. Get request body
-    const { campaignGoal, audience, thread_context, user_notes } = await req.json();
+    const { campaignGoal, audience, thread_context, user_notes, campaignId } = await req.json();
     
     if (!campaignGoal || !audience) {
       return new Response(JSON.stringify({ error: 'Campaign goal and audience are required' }), {
