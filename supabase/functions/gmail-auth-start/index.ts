@@ -1,6 +1,10 @@
-import { createClient } from '@supabase/supabase-js'
-import { google } from 'googleapis'
-import { corsHeaders } from '../_shared/cors.ts'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
+import { google } from "https://esm.sh/googleapis@140"
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+}
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -26,7 +30,7 @@ Deno.serve(async (req) => {
       Deno.env.get('GOOGLE_CLIENT_ID'),
       Deno.env.get('GOOGLE_CLIENT_SECRET'),
       // Use the environment variable for the redirect URI
-      Deno.env.get('VITE_SITE_URL') + '/auth/callback/google'
+      Deno.env.get('SITE_URL') + '/auth/callback/google'
     );
     
     const scopes = [
