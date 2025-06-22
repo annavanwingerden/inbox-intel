@@ -2,7 +2,7 @@
 
 InboxIntel is a powerful cold outreach automation tool designed to help users craft, send, and optimize their email campaigns. Built on a modern, serverless stack, it leverages AI to enhance email content and provides analytics to track campaign effectiveness.
 
-**Live Demo:** https://inbox-intel-gray.vercel.app/
+**Live Demo:** (InboxIntel Homepage)[https://inbox-intel-gray.vercel.app/]
 
 ---
 
