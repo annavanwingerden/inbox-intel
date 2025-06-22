@@ -18,6 +18,7 @@ export default function Login() {
           appearance={{ theme: ThemeSupa }}
           providers={['google']}
           redirectTo={`${typeof window !== 'undefined' ? window.location.origin : ''}/auth/callback`}
+          onlyThirdPartyProviders
         />
       </div>
     </div>

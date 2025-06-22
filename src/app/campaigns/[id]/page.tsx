@@ -527,6 +527,17 @@ export default function CampaignDetail() {
 
   return (
     <div className="container mx-auto p-8">
+      {/* Back Button */}
+      <div className="mb-6">
+        <Button 
+          variant="outline" 
+          onClick={() => window.history.back()}
+          className="flex items-center gap-2"
+        >
+          ← Back to Dashboard
+        </Button>
+      </div>
+
       <Card className="mb-8">
         <CardHeader>
           <CardTitle>{campaign.name}</CardTitle>

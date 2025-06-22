@@ -1,42 +1,53 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { createClient } from '@supabase/supabase-js'
+import { google } from 'googleapis'
+import { corsHeaders } from '../_shared/cors.ts'
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-}
-
-serve(async (req) => {
-  // This is needed if you're planning to invoke your function from a browser.
+Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
 
   try {
-    const googleClientId = Deno.env.get("GOOGLE_CLIENT_ID");
-    // The redirect URI must point to a route in our Next.js app that will handle the code exchange.
-    const redirectUri = Deno.env.get("SITE_URL") + '/auth/callback/google';
+    const supabase = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      { global: { headers: { Authorization: req.headers.get('Authorization')! } } }
+    )
 
-    if (!googleClientId || !redirectUri) {
-      throw new Error("Missing environment variables: GOOGLE_CLIENT_ID or SITE_URL");
+    const { data: { user } } = await supabase.auth.getUser()
+    if (!user) {
+      return new Response(JSON.stringify({ error: 'User not authenticated' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 401,
+      })
     }
 
-    const authUrl = new URL("https://accounts.google.com/o/oauth2/v2/auth");
-    authUrl.searchParams.set("client_id", googleClientId);
-    authUrl.searchParams.set("redirect_uri", redirectUri);
-    authUrl.searchParams.set("response_type", "code");
-    authUrl.searchParams.set("scope", "https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/gmail.send");
-    authUrl.searchParams.set("access_type", "offline");
-    authUrl.searchParams.set("prompt", "consent"); // Force consent screen to get refresh token every time
+    const oauth2Client = new google.auth.OAuth2(
+      Deno.env.get('GOOGLE_CLIENT_ID'),
+      Deno.env.get('GOOGLE_CLIENT_SECRET'),
+      // Use the environment variable for the redirect URI
+      Deno.env.get('VITE_SITE_URL') + '/auth/callback/google'
+    );
+    
+    const scopes = [
+      'https://www.googleapis.com/auth/gmail.readonly',
+      'https://www.googleapis.com/auth/gmail.send',
+    ];
 
-    return new Response(JSON.stringify({ url: authUrl.toString() }), {
+    const url = oauth2Client.generateAuthUrl({
+      access_type: 'offline',
+      scope: scopes,
+      state: JSON.stringify({ userId: user.id }),
+    });
+
+    return new Response(JSON.stringify({ url }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,
-    });
-
-  } catch (err) {
-    return new Response(String(err?.message ?? err), {
+    })
+  } catch (error) {
+    return new Response(JSON.stringify({ error: error.message }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      status: 500,
-    });
+      status: 400,
+    })
   }
 }) 

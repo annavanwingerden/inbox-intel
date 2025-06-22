@@ -202,10 +202,12 @@ serve(async (req) => {
         user_id: user.id,
         recipient_email: recipientEmail,
         subject: subject,
-        original_draft: body, // In this context, this is the follow-up body
+        body: body,
+        original_draft: JSON.stringify(body),
         message_id: messageId,
         thread_id: newThreadId,
-        status: 'sent', // Or maybe 'follow-up-sent'
+        status: 'sent',
+        sent_at: new Date().toISOString(),
       });
 
     if (dbError) {

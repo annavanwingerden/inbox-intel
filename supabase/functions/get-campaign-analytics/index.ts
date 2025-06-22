@@ -43,6 +43,22 @@ serve(async (req) => {
       });
     }
 
+    console.log(`Fetching analytics for campaign: ${campaignId}, user: ${user.id}`);
+
+    // Test if replies table exists and is accessible
+    console.log('Testing replies table access...');
+    const { data: testData, error: testError } = await supabase
+      .from('replies')
+      .select('id')
+      .limit(1);
+    
+    if (testError) {
+      console.error('Test query failed:', testError);
+      throw new Error(`Replies table access test failed: ${testError.message || testError.details || 'Unknown error'}`);
+    }
+    
+    console.log('Replies table is accessible');
+
     // 1. Get total emails sent for the campaign
     const { count: totalSent, error: sentError } = await supabase
       .from('emails')
@@ -50,16 +66,28 @@ serve(async (req) => {
       .eq('campaign_id', campaignId)
       .eq('user_id', user.id);
 
-    if (sentError) throw new Error(`Error fetching sent count: ${sentError.message}`);
+    if (sentError) {
+      console.error('Error fetching sent count:', sentError);
+      throw new Error(`Error fetching sent count: ${sentError.message}`);
+    }
+
+    console.log(`Total emails sent: ${totalSent}`);
 
     // 2. Get total replies received for the campaign
+    console.log(`Attempting to fetch replies for campaign: ${campaignId}, user: ${user.id}`);
     const { count: totalReplies, error: repliesError } = await supabase
       .from('replies')
       .select('*', { count: 'exact', head: true })
       .eq('campaign_id', campaignId)
       .eq('user_id', user.id);
       
-    if (repliesError) throw new Error(`Error fetching replies count: ${repliesError.message}`);
+    if (repliesError) {
+      console.error('Error fetching replies count:', repliesError);
+      const errorMessage = repliesError.message || repliesError.details || repliesError.hint || 'Unknown error';
+      throw new Error(`Error fetching replies count: ${errorMessage}`);
+    }
+
+    console.log(`Total replies received: ${totalReplies}`);
 
     // 3. Get counts for each outcome tag
     const { data: outcomeData, error: outcomeError } = await supabase
@@ -68,9 +96,15 @@ serve(async (req) => {
       .eq('campaign_id', campaignId)
       .eq('user_id', user.id);
 
-    if (outcomeError) throw new Error(`Error fetching outcomes: ${outcomeError.message}`);
+    if (outcomeError) {
+      console.error('Error fetching outcomes:', outcomeError);
+      const errorMessage = outcomeError.message || outcomeError.details || outcomeError.hint || 'Unknown error';
+      throw new Error(`Error fetching outcomes: ${errorMessage}`);
+    }
 
-    const outcomeCounts = outcomeData.reduce((acc, { outcome_tag }) => {
+    console.log(`Outcome data:`, outcomeData);
+
+    const outcomeCounts = (outcomeData ?? []).reduce((acc, { outcome_tag }) => {
       if (outcome_tag) {
         acc[outcome_tag] = (acc[outcome_tag] || 0) + 1;
       }
@@ -78,14 +112,14 @@ serve(async (req) => {
     }, {});
 
     // 4. Calculate reply rate
-    const replyRate = totalSent > 0 ? (totalReplies / totalSent) * 100 : 0;
-
     const analytics = {
-      totalSent: totalSent || 0,
-      totalReplies: totalReplies || 0,
-      replyRate: parseFloat(replyRate.toFixed(2)),
+      totalSent: totalSent ?? 0,
+      totalReplies: totalReplies ?? 0,
+      replyRate: (totalSent ?? 0) > 0 ? ((totalReplies ?? 0) / (totalSent ?? 0)) * 100 : 0,
       outcomeCounts: outcomeCounts,
     };
+
+    console.log('Analytics result:', analytics);
 
     return new Response(JSON.stringify({ analytics }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

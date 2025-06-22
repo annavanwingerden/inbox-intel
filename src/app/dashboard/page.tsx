@@ -45,6 +45,7 @@ interface Campaign {
 
 export default function Dashboard() {
   const supabase = createSupabaseClient();
+  const router = useRouter();
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -61,10 +62,16 @@ export default function Dashboard() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const { data: { session } } = await supabase.auth.getSession();
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      console.log('Session data:', session);
+      console.log('Session error:', sessionError);
+      
       setSession(session);
       if (!session) {
-        throw new Error("Not authenticated");
+        console.log('No session found, redirecting to login');
+        router.push('/login');
+        return;
       }
 
       // Fetch Campaigns
@@ -87,6 +94,7 @@ export default function Dashboard() {
       setIsGmailConnected(!!tokenData);
 
     } catch (err: any) {
+      console.error('Dashboard fetch error:', err);
       setError(err.message);
     } finally {
       setLoading(false);
@@ -152,12 +160,8 @@ export default function Dashboard() {
     if (error) {
       setError(error.message);
     } else {
-      setSession(null);
-      setIsGmailConnected(false);
-      setCampaigns([]);
-      setError(null);
-      setLoading(true);
-      fetchData();
+      // Redirect to login page after successful sign out
+      router.push('/login');
     }
   };
 
