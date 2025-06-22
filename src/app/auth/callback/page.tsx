@@ -1,57 +1,40 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { Suspense, useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { createSupabaseClient } from '@/lib/supabaseClient';
 
-export default function AuthCallback() {
+// This component uses useSearchParams(), so it must be wrapped in a <Suspense>
+const CallbackHandler = () => {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const supabase = createSupabaseClient();
   const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const handleAuthCallback = async () => {
       try {
-        setLoading(true);
+        const { data, error: sessionError } = await supabase.auth.getSession();
         
-        // Handle the auth callback
-        const { data, error } = await supabase.auth.getSession();
-        
-        if (error) {
-          throw error;
-        }
+        if (sessionError) throw sessionError;
 
         if (data.session) {
-          // User is authenticated, redirect to dashboard
           router.push('/dashboard');
         } else {
-          // No session found, redirect to login
           router.push('/login');
         }
 
-      } catch (e: any) {
+      } catch (e: unknown) {
         console.error('Auth callback error:', e);
-        setError(e.message || 'Authentication failed');
-        setLoading(false);
+        setError(e instanceof Error ? e.message : 'Authentication failed');
       }
     };
 
     handleAuthCallback();
   }, [router, supabase]);
 
-  if (loading) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen">
-        <p className="text-lg">Completing sign in...</p>
-      </div>
-    );
-  }
-
   if (error) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen">
+      <>
         <p className="text-lg text-red-600">Sign in failed</p>
         <p className="text-sm text-gray-500 mt-2">Error: {error}</p>
         <button
@@ -60,9 +43,19 @@ export default function AuthCallback() {
         >
           Try Again
         </button>
-      </div>
+      </>
     );
   }
 
-  return null;
+  return <p className="text-lg">Finalizing sign in...</p>;
+};
+
+export default function AuthCallback() {
+  return (
+    <div className="flex flex-col items-center justify-center min-h-screen">
+      <Suspense fallback={<p className="text-lg">Completing sign in...</p>}>
+        <CallbackHandler />
+      </Suspense>
+    </div>
+  );
 } 
