@@ -40,17 +40,13 @@ interface Campaign {
   created_at: string;
 }
 
-interface DashboardClientProps {
-  initialCampaigns: Campaign[];
-  initialIsGmailConnected: boolean;
-}
-
-export default function DashboardClient({ initialCampaigns, initialIsGmailConnected }: DashboardClientProps) {
+export default function DashboardClient() {
   const supabase = createBrowserClient();
   const router = useRouter();
-  const [campaigns, setCampaigns] = useState<Campaign[]>(initialCampaigns);
+  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  const [isGmailConnected, setIsGmailConnected] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isGmailConnected, setIsGmailConnected] = useState(initialIsGmailConnected);
 
   // State for the form
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -58,6 +54,46 @@ export default function DashboardClient({ initialCampaigns, initialIsGmailConnec
   const [newCampaignGoal, setNewCampaignGoal] = useState('');
   const [newCampaignAudience, setNewCampaignAudience] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (!session) {
+          router.push('/login');
+          return;
+        }
+
+        // Now fetch campaigns and Gmail status
+        const [campaignResponse, tokenResponse] = await Promise.all([
+          supabase.functions.invoke('campaign-manager', { method: 'GET' }),
+          supabase.from('user_tokens').select('id').single(),
+        ]);
+
+        const { data: campaignData, error: campaignError } = campaignResponse;
+        const { data: tokenData, error: tokenError } = tokenResponse;
+
+        if (campaignError) {
+          console.error('Error fetching campaigns:', campaignError);
+        }
+        
+        if (tokenError && tokenError.code !== 'PGRST116') {
+          console.error('Error fetching gmail token:', tokenError);
+        }
+
+        setCampaigns(campaignData?.campaigns || []);
+        setIsGmailConnected(!!tokenData);
+        setLoading(false);
+
+      } catch (err: any) {
+        setError(err.message);
+        setLoading(false);
+      }
+    };
+
+    checkAuth();
+  }, [supabase, router]);
 
   const handleCreateCampaign = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -117,8 +153,12 @@ export default function DashboardClient({ initialCampaigns, initialIsGmailConnec
     }
   };
 
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
   if (error) {
-     return <p className="text-red-500">Error: {error}</p>
+    return <div>Error: {error}</div>;
   }
 
   if (!isGmailConnected) {
