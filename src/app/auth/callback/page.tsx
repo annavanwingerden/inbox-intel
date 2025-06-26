@@ -10,41 +10,69 @@ const CallbackHandler = () => {
   const searchParams = useSearchParams();
   const supabase = createBrowserClient();
   const [error, setError] = useState<string | null>(null);
+  const [debugInfo, setDebugInfo] = useState<string[]>([]);
+
+  const addDebug = (message: string) => {
+    console.log(`🔍 ${message}`);
+    setDebugInfo(prev => [...prev, message]);
+  };
 
   useEffect(() => {
     const handleAuthCallback = async () => {
+      addDebug('Auth callback started');
+      addDebug(`URL: ${window.location.href}`);
+      
       try {
-        // Get the code and state from URL parameters
         const code = searchParams.get('code');
         const state = searchParams.get('state');
+        const error = searchParams.get('error');
+        
+        addDebug(`Code: ${code ? 'YES' : 'NO'}`);
+        addDebug(`State: ${state ? 'YES' : 'NO'}`);
+        addDebug(`Error: ${error || 'NO'}`);
+        
+        if (error) {
+          throw new Error(`OAuth error: ${error}`);
+        }
         
         if (code) {
-          // Exchange the code for a session
+          addDebug('Exchanging code for session...');
           const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
           
+          addDebug(`Exchange result: ${exchangeError ? 'ERROR' : 'SUCCESS'}`);
+          
           if (exchangeError) {
+            addDebug(`Exchange error: ${exchangeError.message}`);
             throw exchangeError;
           }
           
           if (data.session) {
-            // Successfully authenticated, redirect to dashboard
+            addDebug('Session created successfully!');
+            addDebug('Redirecting to dashboard...');
             router.push('/dashboard');
             return;
+          } else {
+            addDebug('No session in exchange result');
           }
         }
         
-        // If no code or exchange failed, check if we already have a session
+        addDebug('Checking existing session...');
         const { data: { session } } = await supabase.auth.getSession();
         
+        addDebug(`Session exists: ${session ? 'YES' : 'NO'}`);
+        
         if (session) {
+          addDebug('Session found, redirecting to dashboard');
           router.push('/dashboard');
         } else {
+          addDebug('No session found, redirecting to login');
           router.push('/login');
         }
 
       } catch (e: unknown) {
-        console.error('Auth callback error:', e);
-        setError(e instanceof Error ? e.message : 'Authentication failed');
+        const errorMessage = e instanceof Error ? e.message : 'Unknown error';
+        addDebug(`ERROR: ${errorMessage}`);
+        setError(errorMessage);
       }
     };
 
@@ -53,20 +81,39 @@ const CallbackHandler = () => {
 
   if (error) {
     return (
-      <>
-        <p className="text-lg text-red-600">Sign in failed</p>
-        <p className="text-sm text-gray-500 mt-2">Error: {error}</p>
+      <div className="flex flex-col items-center justify-center min-h-screen p-8">
+        <h2 className="text-xl font-bold text-red-600 mb-4">Sign in failed</h2>
+        <p className="text-sm text-gray-500 mb-4">Error: {error}</p>
+        
+        <div className="bg-gray-100 p-4 rounded-lg mb-4 max-w-md">
+          <h3 className="font-bold mb-2">Debug Info:</h3>
+          {debugInfo.map((info, index) => (
+            <div key={index} className="text-xs text-gray-600 mb-1">{info}</div>
+          ))}
+        </div>
+        
         <button
           onClick={() => router.push('/login')}
-          className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
+          className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
         >
           Try Again
         </button>
-      </>
+      </div>
     );
   }
 
-  return <p className="text-lg">Finalizing sign in...</p>;
+  return (
+    <div className="flex flex-col items-center justify-center min-h-screen">
+      <p className="text-lg mb-4">Finalizing sign in...</p>
+      
+      <div className="bg-gray-100 p-4 rounded-lg max-w-md">
+        <h3 className="font-bold mb-2">Debug Info:</h3>
+        {debugInfo.map((info, index) => (
+          <div key={index} className="text-xs text-gray-600 mb-1">{info}</div>
+        ))}
+      </div>
+    </div>
+  );
 };
 
 export default function AuthCallback() {
