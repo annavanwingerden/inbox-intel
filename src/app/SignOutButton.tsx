@@ -1,20 +1,18 @@
 'use client';
 
-import { createClient } from '@/utils/supabase/client';
+import { createBrowserClient } from '@/utils/supabase';
 import { Button } from '@/components/ui/button';
 
 export default function SignOutButton() {
-  const handleSubmit = async (event: React.FormEvent) => {
-    event.preventDefault();
-    const supabase = createClient();
+  const supabase = createBrowserClient();
+  
+  const handleSignOut = async () => {
     await supabase.auth.signOut();
-    // A hard refresh is a simple way to clear state and redirect.
-    window.location.href = '/login'; 
-  }
+  };
 
   return (
-    <form onSubmit={handleSubmit}>
-      <Button type="submit">Sign Out</Button>
-    </form>
-  )
+    <Button onClick={handleSignOut} variant="outline">
+      Sign Out
+    </Button>
+  );
 } 

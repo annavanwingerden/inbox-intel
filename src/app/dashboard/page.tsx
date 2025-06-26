@@ -1,4 +1,4 @@
-import { createClient } from '@/utils/supabase/server';
+import { createServerClient } from '@/utils/supabase/server-index';
 import { redirect } from 'next/navigation';
 import DashboardClient from './DashboardClient';
 
@@ -11,7 +11,7 @@ interface Campaign {
 }
 
 export default async function Dashboard() {
-  const supabase = createClient();
+  const supabase = await createServerClient();
 
   const { data: { session }, } = await supabase.auth.getSession();
 

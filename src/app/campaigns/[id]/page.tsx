@@ -1,10 +1,10 @@
-import { createClient } from '@/utils/supabase/server';
+import { createServerClient } from '@/utils/supabase/server-index';
 import { redirect } from 'next/navigation';
 import CampaignDetailClient from './CampaignDetailClient';
 
-export default async function CampaignDetail({ params }: { params: { id: string } }) {
-  const supabase = createClient();
-  const campaignId = params.id;
+export default async function CampaignDetail({ params }: { params: Promise<{ id: string }> }) {
+  const { id: campaignId } = await params;
+  const supabase = await createServerClient();
 
   const { data: { session } } = await supabase.auth.getSession();
   if (!session) {

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { createClient } from '@/utils/supabase/client';
+import { createBrowserClient } from '@/utils/supabase';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -93,7 +93,7 @@ const triggerConfetti = () => {
 
 
 export default function CampaignDetailClient({ campaign: initialCampaign }: { campaign: Campaign }) {
-  const supabase = createClient();
+  const supabase = createBrowserClient();
   
   const [campaign, setCampaign] = useState<Campaign | null>(initialCampaign);
   const [error, setError] = useState<string | null>(null);

@@ -2,12 +2,12 @@
 
 import { useEffect, useState, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { createClient } from '@/utils/supabase/client';
+import { createBrowserClient } from '@/utils/supabase';
 
 function GoogleAuthCallbackInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const supabase = createClient();
+  const supabase = createBrowserClient();
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 

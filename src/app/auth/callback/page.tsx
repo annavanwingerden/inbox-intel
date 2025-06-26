@@ -2,12 +2,12 @@
 
 import { Suspense, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { createClient } from '@/utils/supabase/client';
+import { createBrowserClient } from '@/utils/supabase';
 
 // This component uses useSearchParams(), so it must be wrapped in a <Suspense>
 const CallbackHandler = () => {
   const router = useRouter();
-  const supabase = createClient();
+  const supabase = createBrowserClient();
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {

@@ -1,11 +1,11 @@
-import { createClient } from '@/utils/supabase/server';
+import { createServerClient } from '@/utils/supabase/server-index';
 import { Button } from '@/components/ui/button';
 import { redirect } from 'next/navigation';
 import SignOutButton from './SignOutButton';
 
 
 export default async function Home() {
-  const supabase = createClient();
+  const supabase = await createServerClient();
 
   const { data: { user } } = await supabase.auth.getUser();
 

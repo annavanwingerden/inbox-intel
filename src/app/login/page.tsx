@@ -1,10 +1,10 @@
 "use client"
 import { Auth } from '@supabase/auth-ui-react'
 import { ThemeSupa } from '@supabase/auth-ui-shared'
-import { createClient } from '@/utils/supabase/client'
+import { createBrowserClient } from '@/utils/supabase'
 
 export default function Login() {
-  const supabase = createClient();
+  const supabase = createBrowserClient();
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50">

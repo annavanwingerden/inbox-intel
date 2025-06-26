@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { createClient } from '@/utils/supabase/client';
+import { createBrowserClient } from '@/utils/supabase';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -46,7 +46,7 @@ interface DashboardClientProps {
 }
 
 export default function DashboardClient({ initialCampaigns, initialIsGmailConnected }: DashboardClientProps) {
-  const supabase = createClient();
+  const supabase = createBrowserClient();
   const router = useRouter();
   const [campaigns, setCampaigns] = useState<Campaign[]>(initialCampaigns);
   const [error, setError] = useState<string | null>(null);
