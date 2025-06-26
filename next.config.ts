@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  webpack: (config, { isServer }) => {
+  webpack: (config) => {
     // Exclude Supabase Edge Functions from the build
     config.module.rules.push({
       test: /supabase\/functions/,
@@ -15,10 +15,6 @@ const nextConfig: NextConfig = {
     };
     
     return config;
-  },
-  // Exclude supabase directory from TypeScript compilation
-  typescript: {
-    ignoreBuildErrors: true,
   },
   eslint: {
     ignoreDuringBuilds: true,
