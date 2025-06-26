@@ -1,4 +1,11 @@
-supabase/
+# Ignore Supabase Edge Functions (they run on Supabase, not Vercel)
+supabase/functions/
+
+# Ignore Supabase migrations (they're handled by Supabase)
+supabase/migrations/
+
+# Ignore Supabase config (not needed on Vercel)
+supabase/config.toml
 
 
 
