@@ -8,6 +8,13 @@ const nextConfig: NextConfig = {
       loader: 'ignore-loader',
     });
     
+    // Also exclude Deno-specific imports that might be referenced
+    config.resolve.fallback = {
+      ...config.resolve.fallback,
+      'https://deno.land/std@0.168.0/http/server.ts': false,
+      'https://esm.sh/@supabase/supabase-js@2': false,
+    };
+    
     return config;
   },
   eslint: {
