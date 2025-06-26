@@ -1,10 +1,21 @@
 "use client"
+import { useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { Auth } from '@supabase/auth-ui-react'
 import { ThemeSupa } from '@supabase/auth-ui-shared'
 import { createBrowserClient } from '@/utils/supabase'
 
 export default function Login() {
-  const supabase = createBrowserClient();
+  const router = useRouter()
+  const supabase = createBrowserClient()
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        router.replace('/dashboard')
+      }
+    })
+  }, [router, supabase])
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50">
