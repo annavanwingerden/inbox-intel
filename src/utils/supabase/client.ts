@@ -1,16 +1,17 @@
-import { createClient as createSupabaseClient } from '@supabase/supabase-js'
+import { createBrowserClient } from '@supabase/ssr';
 
 export const createClient = () =>
-  createSupabaseClient(
+  createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
-      auth: {
-        persistSession: true,
-        storageKey: 'inbox-intel-auth',
-        storage: typeof window !== 'undefined' ? window.localStorage : undefined,
-        autoRefreshToken: true,
-        detectSessionInUrl: true,
+      cookies: {
+        name: 'sb-access-token', // You can use the default or your own name
+        lifetime: 60 * 60 * 24 * 7, // 1 week
+        domain: process.env.NEXT_PUBLIC_COOKIE_DOMAIN || undefined, // Set this in your .env for production
+        path: '/',
+        sameSite: 'Lax',
+        secure: true,
       },
     }
-  )
+  );
