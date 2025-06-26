@@ -821,5 +821,3 @@ export default function CampaignDetailClient({ campaign: initialCampaign }: { ca
      </div>
   );
 }
-
-</rewritten_file>
