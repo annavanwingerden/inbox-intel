@@ -1,23 +1,42 @@
 'use client';
 
 import { Suspense, useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { createBrowserClient } from '@/utils/supabase';
 
 // This component uses useSearchParams(), so it must be wrapped in a <Suspense>
 const CallbackHandler = () => {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const supabase = createBrowserClient();
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const handleAuthCallback = async () => {
       try {
-        const { data, error: sessionError } = await supabase.auth.getSession();
+        // Get the code and state from URL parameters
+        const code = searchParams.get('code');
+        const state = searchParams.get('state');
         
-        if (sessionError) throw sessionError;
-
-        if (data.session) {
+        if (code) {
+          // Exchange the code for a session
+          const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+          
+          if (exchangeError) {
+            throw exchangeError;
+          }
+          
+          if (data.session) {
+            // Successfully authenticated, redirect to dashboard
+            router.push('/dashboard');
+            return;
+          }
+        }
+        
+        // If no code or exchange failed, check if we already have a session
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (session) {
           router.push('/dashboard');
         } else {
           router.push('/login');
@@ -30,7 +49,7 @@ const CallbackHandler = () => {
     };
 
     handleAuthCallback();
-  }, [router, supabase]);
+  }, [router, supabase, searchParams]);
 
   if (error) {
     return (
