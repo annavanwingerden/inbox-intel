@@ -1,24 +1,6 @@
 import { createClient } from '@/utils/supabase/server';
-import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  Table,
-  TableHeader,
-  TableBody,
-  TableHead,
-  TableRow,
-  TableCell,
-} from '@/components/ui/table';
-import { Button } from '@/components/ui/button';
-import Link from 'next/link';
-import DashboardClient from './DashboardClient'; // We will create this client component
+import DashboardClient from './DashboardClient';
 
 interface Campaign {
   id: string;
@@ -29,8 +11,7 @@ interface Campaign {
 }
 
 export default async function Dashboard() {
-  const cookieStore = cookies();
-  const supabase = createClient(cookieStore);
+  const supabase = createClient();
 
   const { data: { session }, } = await supabase.auth.getSession();
 

@@ -1,10 +1,10 @@
 "use client"
 import { Auth } from '@supabase/auth-ui-react'
 import { ThemeSupa } from '@supabase/auth-ui-shared'
-import { createSupabaseClient } from '@/lib/supabaseClient'
+import { createClient } from '@/utils/supabase/client'
 
 export default function Login() {
-  const supabase = createSupabaseClient();
+  const supabase = createClient();
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50">
@@ -17,7 +17,6 @@ export default function Login() {
           supabaseClient={supabase}
           appearance={{ theme: ThemeSupa }}
           providers={['google']}
-          redirectTo={`${typeof window !== 'undefined' ? window.location.origin : ''}/auth/callback`}
           onlyThirdPartyProviders
         />
       </div>
