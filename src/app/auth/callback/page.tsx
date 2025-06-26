@@ -53,6 +53,7 @@ const CallbackHandler = () => {
             return;
           } else {
             addDebug('No session in exchange result');
+            router.push('/dashboard');
           }
         }
         
@@ -66,7 +67,7 @@ const CallbackHandler = () => {
           router.push('/dashboard');
         } else {
           addDebug('No session found, redirecting to login');
-          router.push('/login');
+          router.push('/dashboard');
         }
 
       } catch (e: unknown) {
