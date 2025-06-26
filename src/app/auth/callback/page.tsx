@@ -14,7 +14,7 @@ const CallbackHandler = () => {
 
   const addDebug = (message: string) => {
     console.log(`🔍 ${message}`);
-    setDebugInfo(prev => [...prev, message]);
+    setDebugInfo(prev => [...prev, `${new Date().toLocaleTimeString()}: ${message}`]);
   };
 
   useEffect(() => {
@@ -23,21 +23,36 @@ const CallbackHandler = () => {
       addDebug(`URL: ${window.location.href}`);
       
       try {
+        // Let Supabase handle the OAuth callback automatically
+        const { data, error: authError } = await supabase.auth.getSession();
+        
+        addDebug(`Session check result: ${authError ? 'ERROR' : 'SUCCESS'}`);
+        
+        if (authError) {
+          addDebug(`Auth error: ${authError.message}`);
+          throw authError;
+        }
+        
+        if (data.session) {
+          addDebug('Session found! User is authenticated');
+          addDebug('Redirecting to dashboard...');
+          
+          // Add a small delay to ensure session is properly saved
+          setTimeout(() => {
+            router.push('/dashboard');
+          }, 1000);
+          return;
+        }
+        
+        // If no session, check for OAuth parameters
         const code = searchParams.get('code');
         const state = searchParams.get('state');
-        const error = searchParams.get('error');
         
-        addDebug(`Code: ${code ? 'YES' : 'NO'}`);
-        addDebug(`State: ${state ? 'YES' : 'NO'}`);
-        addDebug(`Error: ${error || 'NO'}`);
-        
-        if (error) {
-          throw new Error(`OAuth error: ${error}`);
-        }
+        addDebug(`OAuth params - Code: ${code ? 'YES' : 'NO'}, State: ${state ? 'YES' : 'NO'}`);
         
         if (code) {
           addDebug('Exchanging code for session...');
-          const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+          const { data: exchangeData, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
           
           addDebug(`Exchange result: ${exchangeError ? 'ERROR' : 'SUCCESS'}`);
           
@@ -46,29 +61,21 @@ const CallbackHandler = () => {
             throw exchangeError;
           }
           
-          if (data.session) {
+          if (exchangeData.session) {
             addDebug('Session created successfully!');
             addDebug('Redirecting to dashboard...');
-            router.push('/dashboard');
+            
+            setTimeout(() => {
+              router.push('/dashboard');
+            }, 1000);
             return;
-          } else {
-            addDebug('No session in exchange result');
-            router.push('/dashboard');
           }
         }
         
-        addDebug('Checking existing session...');
-        const { data: { session } } = await supabase.auth.getSession();
-        
-        addDebug(`Session exists: ${session ? 'YES' : 'NO'}`);
-        
-        if (session) {
-          addDebug('Session found, redirecting to dashboard');
-          router.push('/dashboard');
-        } else {
-          addDebug('No session found, redirecting to login');
-          router.push('/dashboard');
-        }
+        addDebug('No session found, redirecting to login');
+        setTimeout(() => {
+          router.push('/login');
+        }, 1000);
 
       } catch (e: unknown) {
         const errorMessage = e instanceof Error ? e.message : 'Unknown error';

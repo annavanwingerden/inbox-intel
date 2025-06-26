@@ -47,6 +47,7 @@ export default function DashboardClient() {
   const [isGmailConnected, setIsGmailConnected] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [user, setUser] = useState<any>(null);
 
   // State for the form
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -56,44 +57,80 @@ export default function DashboardClient() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    const checkAuth = async () => {
+    // Set up auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        console.log('🔍 Auth state change:', event, session?.user?.email);
+        
+        if (event === 'SIGNED_IN' && session) {
+          setUser(session.user);
+          await fetchDashboardData();
+        } else if (event === 'SIGNED_OUT') {
+          setUser(null);
+          router.push('/login');
+        } else if (event === 'TOKEN_REFRESHED' && session) {
+          setUser(session.user);
+        }
+      }
+    );
+
+    // Initial session check
+    const checkInitialSession = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
+        console.log('🔍 Initial session check:', session?.user?.email);
         
-        if (!session) {
+        if (session) {
+          setUser(session.user);
+          await fetchDashboardData();
+        } else {
+          console.log('❌ No session found, redirecting to login');
           router.push('/login');
-          return;
         }
-
-        // Now fetch campaigns and Gmail status
-        const [campaignResponse, tokenResponse] = await Promise.all([
-          supabase.functions.invoke('campaign-manager', { method: 'GET' }),
-          supabase.from('user_tokens').select('id').single(),
-        ]);
-
-        const { data: campaignData, error: campaignError } = campaignResponse;
-        const { data: tokenData, error: tokenError } = tokenResponse;
-
-        if (campaignError) {
-          console.error('Error fetching campaigns:', campaignError);
-        }
-        
-        if (tokenError && tokenError.code !== 'PGRST116') {
-          console.error('Error fetching gmail token:', tokenError);
-        }
-
-        setCampaigns(campaignData?.campaigns || []);
-        setIsGmailConnected(!!tokenData);
-        setLoading(false);
-
       } catch (err: any) {
+        console.error('💥 Session check error:', err);
         setError(err.message);
+      } finally {
         setLoading(false);
       }
     };
 
-    checkAuth();
+    checkInitialSession();
+
+    // Cleanup subscription
+    return () => subscription.unsubscribe();
   }, [supabase, router]);
+
+  const fetchDashboardData = async () => {
+    try {
+      console.log('🔍 Fetching dashboard data...');
+      
+      // Now fetch campaigns and Gmail status
+      const [campaignResponse, tokenResponse] = await Promise.all([
+        supabase.functions.invoke('campaign-manager', { method: 'GET' }),
+        supabase.from('user_tokens').select('id').single(),
+      ]);
+
+      const { data: campaignData, error: campaignError } = campaignResponse;
+      const { data: tokenData, error: tokenError } = tokenResponse;
+
+      if (campaignError) {
+        console.error('Error fetching campaigns:', campaignError);
+      }
+      
+      if (tokenError && tokenError.code !== 'PGRST116') {
+        console.error('Error fetching gmail token:', tokenError);
+      }
+
+      setCampaigns(campaignData?.campaigns || []);
+      setIsGmailConnected(!!tokenData);
+      console.log('✅ Dashboard data loaded');
+
+    } catch (err: any) {
+      console.error('💥 Dashboard data error:', err);
+      setError(err.message);
+    }
+  };
 
   const handleCreateCampaign = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -159,6 +196,10 @@ export default function DashboardClient() {
 
   if (error) {
     return <div>Error: {error}</div>;
+  }
+
+  if (!user) {
+    return <div>Not authenticated</div>;
   }
 
   if (!isGmailConnected) {
