@@ -1,0 +1,17 @@
+name: Trigger Supabase Reply Poller
+
+on:
+  schedule:
+    - cron: "*/5 * * * *" # every 5 minutes
+  workflow_dispatch: # allows manual trigger
+
+jobs:
+  call-reply-poller:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call Supabase reply-poller function
+        run: |
+          curl -X POST \
+            -H "Authorization: Bearer ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}" \
+            -H "Content-Type: application/json" \
+            https://nenjfajozamzaqgvpbmd.functions.supabase.co/reply-poller
