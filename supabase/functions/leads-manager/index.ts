@@ -52,30 +52,41 @@ serve(async (req) => {
         status: 200,
       });
     } else if (req.method === 'POST') {
-      const { campaign_id, emails } = await req.json();
-      
-      if (!campaign_id || !emails || !Array.isArray(emails)) {
-        return new Response(JSON.stringify({ error: 'Campaign ID and emails array are required' }), {
+      let body;
+      try {
+        body = await req.json();
+      } catch {
+        return new Response(JSON.stringify({ error: 'Missing or invalid JSON body' }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           status: 400,
         });
       }
-
+      const { campaign_id, leads } = body;
+      if (!campaign_id || !leads || !Array.isArray(leads)) {
+        return new Response(JSON.stringify({ error: 'Campaign ID and leads array are required' }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400,
+        });
+      }
       // Prepare leads data
-      const leadsData = emails.map((email: string) => ({
+      type LeadInput = { email: string; first_name?: string; last_name?: string; company?: string; status?: string };
+      const leadsData = (leads as LeadInput[]).map((lead) => ({
         campaign_id,
         user_id: user.id,
-        email: email.trim(),
-        status: 'pending'
+        email: lead.email?.trim(),
+        first_name: lead.first_name?.trim() || '',
+        last_name: lead.last_name?.trim() || '',
+        company: lead.company?.trim() || '',
+        status: lead.status || 'pending',
       }));
-
       const { data: newLeads, error } = await supabase
         .from('leads')
         .insert(leadsData)
         .select();
-
-      if (error) throw error;
-
+      if (error) {
+        console.error('Supabase insert error:', error);
+        throw error;
+      }
       return new Response(JSON.stringify({ 
         success: true,
         leads: newLeads,
@@ -84,24 +95,61 @@ serve(async (req) => {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 201,
       });
+    } else if (req.method === 'PATCH') {
+      let body;
+      try {
+        body = await req.json();
+      } catch {
+        return new Response(JSON.stringify({ error: 'Missing or invalid JSON body' }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400,
+        });
+      }
+      const { lead_id, update } = body;
+      if (!lead_id || !update) {
+        return new Response(JSON.stringify({ error: 'Lead ID and update object are required' }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400,
+        });
+      }
+      const { data: updatedLead, error } = await supabase
+        .from('leads')
+        .update(update)
+        .eq('id', lead_id)
+        .eq('user_id', user.id)
+        .select();
+      if (error) throw error;
+      return new Response(JSON.stringify({ 
+        success: true,
+        lead: updatedLead[0],
+        message: 'Lead updated successfully'
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200,
+      });
     } else if (req.method === 'DELETE') {
-      const { lead_id } = await req.json();
-      
+      let body;
+      try {
+        body = await req.json();
+      } catch {
+        return new Response(JSON.stringify({ error: 'Missing or invalid JSON body' }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 400,
+        });
+      }
+      const { lead_id } = body;
       if (!lead_id) {
         return new Response(JSON.stringify({ error: 'Lead ID is required' }), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           status: 400,
         });
       }
-
       const { error } = await supabase
         .from('leads')
         .delete()
         .eq('id', lead_id)
         .eq('user_id', user.id);
-
       if (error) throw error;
-
       return new Response(JSON.stringify({ 
         success: true,
         message: 'Lead deleted successfully'

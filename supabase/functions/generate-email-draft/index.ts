@@ -6,52 +6,6 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
-// Comet Opik REST API integration for Deno
-async function logOpikTrace({
-  apiKey,
-  workspace,
-  name,
-  input,
-  output,
-  metadata = {}
-}: {
-  apiKey: string;
-  workspace: string;
-  name: string;
-  input: Record<string, unknown>;
-  output: Record<string, unknown>;
-  metadata?: Record<string, unknown>;
-}) {
-  if (!apiKey || !workspace) {
-    console.warn("Opik credentials not configured, skipping logging");
-    return;
-  }
-  try {
-    const payload = {
-      name,
-      workspace,
-      input,
-      output,
-      metadata,
-    };
-    const response = await fetch("https://www.comet.com/opik/api/trace", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${apiKey}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(payload)
-    });
-    if (!response.ok) {
-      console.error("Failed to log to Opik:", await response.text());
-    } else {
-      console.log("Successfully logged to Opik");
-    }
-  } catch (error) {
-    console.error("Error logging to Opik:", error);
-  }
-}
-
 serve(async (req) => {
   // Handle CORS preflight request
   if (req.method === 'OPTIONS') {
@@ -192,29 +146,6 @@ Format your response as JSON with "subject" and "body" fields.`;
         body: lines.slice(bodyStart).join('\n').trim()
       };
     }
-
-    // 7. Log to Opik (Deno REST API)
-    const opikApiKey = Deno.env.get("OPIK_API_KEY") || "";
-    const opikWorkspace = Deno.env.get("OPIK_WORKSPACE") || "";
-    await logOpikTrace({
-      apiKey: opikApiKey,
-      workspace: opikWorkspace,
-      name: "Generate Email Draft",
-      input: {
-        campaignGoal,
-        audience,
-        prompt,
-        modelParams
-      },
-      output: {
-        generatedEmail: parsedEmail
-      },
-      metadata: {
-        campaignId: campaignId || "unknown",
-        function: "generate-email-draft",
-        timestamp: new Date().toISOString(),
-      }
-    });
 
     // 8. Return the generated email
     return new Response(JSON.stringify({

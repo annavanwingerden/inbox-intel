@@ -1,5 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import { google } from "https://esm.sh/googleapis@140"
+import { google } from "https://esm.sh/googleapis@128"
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -29,7 +29,6 @@ Deno.serve(async (req) => {
     const oauth2Client = new google.auth.OAuth2(
       Deno.env.get('GOOGLE_CLIENT_ID'),
       Deno.env.get('GOOGLE_CLIENT_SECRET'),
-      // Use the environment variable for the redirect URI
       Deno.env.get('SITE_URL') + '/auth/callback/google'
     );
     
@@ -49,9 +48,10 @@ Deno.serve(async (req) => {
       status: 200,
     })
   } catch (error) {
+    console.error('Error in gmail-auth-start:', error)
     return new Response(JSON.stringify({ error: error.message }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 400,
     })
   }
-}) 
+})
